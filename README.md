@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 約騎海報產生器
 
-## Getting Started
+把 GPX 檔或 Strava 路線連結變成 Instagram 4:5（1080×1350，實際輸出 2160×2700）的約騎招募海報。
 
-First, run the development server:
+## 使用
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run build
+npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+打開 http://localhost:3000：
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **路線模式**：貼 Strava 路線連結或上傳 GPX → 自動算出距離、爬升、預估時間（含休息），地圖（繁中地標）+ 海拔剖面
+- **無路線模式**：選漸層背景或上傳圖片，手動輸入數據
+- 標題、副標、文案、備註、數據全部可編輯；深色／淺色主題可切換，可一鍵匯出兩種版本
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 預估時間公式
 
-## Learn More
+```
+騎乘時間 = 距離 ÷ 平路均速 + 爬升 ÷ 爬升速率
+總時間   = 騎乘時間 + 騎乘小時數 × 每小時休息 + 15 分鐘集合緩衝（取整到 15 分鐘）
+```
 
-To learn more about Next.js, take a look at the following resources:
+強度預設：輕鬆（18 km/h・400 m/h・休 15 分/hr）／一般（22・500・12）／進階（26・650・8），可在「進階時間參數」微調。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Strava 連結功能的一次性設定
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. 到 <https://www.strava.com/settings/api> 建立 API 應用程式（Authorization Callback Domain 填 `localhost`）
+2. 跑 `node scripts/strava-setup.mjs`，照指示完成授權
+3. 把腳本印出的三行存成 `.env.local`，重啟伺服器
 
-## Deploy on Vercel
+沒設定也能用：改用 Strava 路線頁右側「匯出 GPX」下載後上傳即可。
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 技術
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Next.js App Router／MapLibre GL + OpenFreeMap（免金鑰向量圖磚，地標強制繁中）／html-to-image 匯出。地圖資料 © OpenStreetMap 貢獻者。

@@ -1,63 +1,157 @@
-import Image from "next/image";
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ControlPanel } from "@/components/editor/ControlPanel";
+import { Poster } from "@/components/poster/Poster";
+import { exportPosterPng, waitFor } from "@/lib/export";
+import { estimateRideTime } from "@/lib/time";
+import {
+  DEFAULT_POSTER,
+  FORMATS,
+  PACE_PRESETS,
+  type PaceParams,
+  type PosterData,
+  type RouteData,
+  type Theme,
+} from "@/lib/types";
 
 export default function Home() {
+  const [poster, setPoster] = useState<PosterData>(DEFAULT_POSTER);
+  const [route, setRoute] = useState<RouteData | null>(null);
+  const [presetKey, setPresetKey] = useState("normal");
+  const [params, setParams] = useState<PaceParams>(PACE_PRESETS.normal.params);
+  const [exporting, setExporting] = useState(false);
+  const [scale, setScale] = useState(0.4);
+  const mapReadyRef = useRef(false);
+  const previewRef = useRef<HTMLDivElement>(null);
+
+  // 預覽縮放：讓海報塞進右側可視區
+  const { w: posterW, h: posterH } = FORMATS[poster.format];
+  useEffect(() => {
+    const el = previewRef.current;
+    if (!el) return;
+    const update = () =>
+      setScale(Math.min((el.clientWidth - 48) / posterW, (el.clientHeight - 48) / posterH));
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [posterW, posterH]);
+
+  const recompute = useCallback((p: PosterData, pr: PaceParams): string => {
+    const d = parseFloat(p.distanceKm);
+    const e = parseFloat(p.elevationM) || 0;
+    return estimateRideTime(d, e, pr) || p.timeText;
+  }, []);
+
+  const handlePosterChange = useCallback(
+    (patch: Partial<PosterData>, recomputeTime = false) => {
+      setPoster((prev) => {
+        const next = { ...prev, ...patch };
+        if (recomputeTime) next.timeText = recompute(next, params);
+        return next;
+      });
+    },
+    [params, recompute]
+  );
+
+  const handleRoute = useCallback(
+    (rd: RouteData) => {
+      setRoute(rd);
+      setPoster((prev) => {
+        const next: PosterData = {
+          ...prev,
+          mode: "route",
+          title: rd.name || prev.title,
+          distanceKm: String(rd.distanceKm),
+          elevationM: String(rd.elevationM),
+        };
+        next.timeText = recompute(next, params);
+        return next;
+      });
+    },
+    [params, recompute]
+  );
+
+  const handleParamsChange = useCallback(
+    (pr: PaceParams) => {
+      setParams(pr);
+      setPoster((prev) => ({ ...prev, timeText: recompute(prev, pr) }));
+    },
+    [recompute]
+  );
+
+  const handlePresetChange = useCallback(
+    (key: string) => {
+      const preset = PACE_PRESETS[key];
+      if (!preset) return;
+      setPresetKey(key);
+      setParams(preset.params);
+      setPoster((prev) => ({ ...prev, timeText: recompute(prev, preset.params) }));
+    },
+    [recompute]
+  );
+
+  const onMapReady = useCallback((ready: boolean) => {
+    mapReadyRef.current = ready;
+  }, []);
+
+  const exportOne = useCallback(async () => {
+    const node = document.getElementById("poster-root");
+    if (!node) return;
+    setExporting(true);
+    try {
+      await exportPosterPng(node, `${poster.title || "約騎海報"}-${poster.format}-${poster.theme}`);
+    } finally {
+      setExporting(false);
+    }
+  }, [poster.title, poster.theme, poster.format]);
+
+  const exportAll = useCallback(async () => {
+    const node = document.getElementById("poster-root");
+    if (!node) return;
+    setExporting(true);
+    const original = poster.theme;
+    try {
+      for (const theme of ["dark", "light"] as Theme[]) {
+        mapReadyRef.current = false;
+        setPoster((prev) => ({ ...prev, theme }));
+        await waitFor(() => mapReadyRef.current);
+        await new Promise((r) => setTimeout(r, 400));
+        await exportPosterPng(node, `${poster.title || "約騎海報"}-${poster.format}-${theme}`);
+      }
+    } finally {
+      setPoster((prev) => ({ ...prev, theme: original }));
+      setExporting(false);
+    }
+  }, [poster.theme, poster.title, poster.format]);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="flex h-screen w-full">
+      <aside className="h-full w-[400px] shrink-0 border-r bg-background">
+        <ControlPanel
+          poster={poster}
+          route={route}
+          presetKey={presetKey}
+          params={params}
+          exporting={exporting}
+          onPosterChange={handlePosterChange}
+          onRoute={handleRoute}
+          onPresetChange={handlePresetChange}
+          onParamsChange={handleParamsChange}
+          onExport={exportOne}
+          onExportAll={exportAll}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </aside>
+
+      <main
+        ref={previewRef}
+        className="flex h-full flex-1 items-center justify-center overflow-hidden bg-neutral-200/70"
+      >
+        <div style={{ width: posterW * scale, height: posterH * scale }}>
+          <div style={{ transform: `scale(${scale})`, transformOrigin: "top left" }}>
+            <Poster data={poster} route={route} onMapReady={onMapReady} />
+          </div>
         </div>
       </main>
     </div>
