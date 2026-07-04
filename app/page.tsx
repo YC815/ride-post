@@ -128,7 +128,7 @@ export default function Home() {
 
   return (
     <div className="flex h-screen w-full">
-      <aside className="h-full w-[400px] shrink-0 border-r bg-background">
+      <aside className="h-full w-[420px] shrink-0 border-r bg-sidebar">
         <ControlPanel
           poster={poster}
           route={route}

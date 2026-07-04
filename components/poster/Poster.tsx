@@ -241,25 +241,53 @@ function Header({ data, color, subColor, accent }: {
             paddingLeft: 22,
           }}
         >
-          <MeetRow label="集合時間" value={data.meetTime} accent={accent} color={subColor} />
-          <MeetRow label="集合地點" value={data.meetPlace} accent={accent} color={subColor} />
+          <MeetRow icon="time" value={data.meetTime} accent={accent} color={subColor} />
+          <MeetRow icon="place" value={data.meetPlace} accent={accent} color={subColor} />
         </div>
       )}
     </div>
   );
 }
 
-function MeetRow({ label, value, accent, color }: {
-  label: string; value: string; accent: string; color: string;
+function MeetRow({ icon, value, accent, color }: {
+  icon: "time" | "place"; value: string; accent: string; color: string;
 }) {
   if (!value) return null;
   return (
-    <div style={{ display: "flex", alignItems: "baseline", gap: 18 }}>
-      <span style={{ fontSize: 24, fontWeight: 700, letterSpacing: 4, color: accent, flexShrink: 0 }}>
-        {label}
-      </span>
-      <span style={{ fontSize: 35, fontWeight: 700, color, lineHeight: 1.3 }}>{value}</span>
+    <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+      <MeetIcon kind={icon} accent={accent} />
+      <span style={{ fontSize: 44, fontWeight: 800, color, lineHeight: 1.3 }}>{value}</span>
     </div>
+  );
+}
+
+const MEET_ICON_SIZE = 58;
+
+function MeetIcon({ kind, accent }: { kind: "time" | "place"; accent: string }) {
+  const common = {
+    width: MEET_ICON_SIZE,
+    height: MEET_ICON_SIZE,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: accent,
+    strokeWidth: 2.3,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    style: { flexShrink: 0 },
+  };
+  if (kind === "time") {
+    return (
+      <svg {...common} aria-label="集合時間">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3.5 2" />
+      </svg>
+    );
+  }
+  return (
+    <svg {...common} aria-label="集合地點">
+      <path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z" />
+      <circle cx="12" cy="10" r="2.6" />
+    </svg>
   );
 }
 

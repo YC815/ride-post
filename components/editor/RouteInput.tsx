@@ -1,11 +1,13 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { CheckCircle2, FileUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { parseGpx } from "@/lib/gpx";
 import type { RouteData } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface Props {
   route: RouteData | null;
@@ -16,6 +18,7 @@ export function RouteInput({ route, onRoute }: Props) {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function loadStrava() {
@@ -51,7 +54,7 @@ export function RouteInput({ route, onRoute }: Props) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <Label htmlFor="strava-url">Strava 路線連結</Label>
+        <Label htmlFor="strava-url" className="text-muted-foreground">Strava 路線連結</Label>
         <div className="flex gap-2">
           <Input
             id="strava-url"
@@ -67,21 +70,50 @@ export function RouteInput({ route, onRoute }: Props) {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="gpx-file">或上傳 GPX 檔</Label>
+        <Label className="text-muted-foreground">或上傳 GPX 檔</Label>
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            loadFile(e.dataTransfer.files?.[0]);
+          }}
+          className={cn(
+            "flex flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed px-4 py-6 text-center transition-colors",
+            "hover:border-ring hover:bg-accent/50",
+            dragOver ? "border-ring bg-accent" : "border-input"
+          )}
+        >
+          <FileUp className="size-5 text-muted-foreground" />
+          <span className="text-sm font-medium">拖曳 GPX 到此，或點擊選擇</span>
+          <span className="text-xs text-muted-foreground">支援 .gpx 檔案</span>
+        </button>
         <Input
-          id="gpx-file"
           ref={fileRef}
           type="file"
           accept=".gpx,application/gpx+xml"
+          className="hidden"
           onChange={(e) => loadFile(e.target.files?.[0])}
         />
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
       {route && (
-        <p className="text-sm text-muted-foreground">
-          已載入：{route.name || "未命名路線"}（{route.distanceKm} km／爬升 {route.elevationM} m）
-        </p>
+        <div className="flex items-start gap-2.5 rounded-lg border bg-card p-3">
+          <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium">{route.name || "未命名路線"}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {route.distanceKm} km · 爬升 {route.elevationM} m
+            </p>
+          </div>
+        </div>
       )}
     </div>
   );

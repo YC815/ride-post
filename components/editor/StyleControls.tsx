@@ -16,7 +16,7 @@ export function StyleControls({ poster, onChange }: Props) {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-2">
-        <Label>輸出比例</Label>
+        <Label className="text-muted-foreground">輸出比例</Label>
         <Tabs value={poster.format} onValueChange={(v) => onChange({ format: v as PosterData["format"] })}>
           <TabsList className="w-full">
             {Object.entries(FORMATS).map(([key, f]) => (
@@ -32,7 +32,7 @@ export function StyleControls({ poster, onChange }: Props) {
       </div>
       {poster.mode === "route" && (
         <div className="flex flex-col gap-2">
-          <Label>主題</Label>
+          <Label className="text-muted-foreground">主題</Label>
           <Tabs value={poster.theme} onValueChange={(v) => onChange({ theme: v as PosterData["theme"] })}>
             <TabsList className="w-full">
               <TabsTrigger value="dark" className="flex-1">深色電影感</TabsTrigger>
@@ -43,7 +43,7 @@ export function StyleControls({ poster, onChange }: Props) {
       )}
 
       <div className="flex flex-col gap-2">
-        <Label>強調色</Label>
+        <Label className="text-muted-foreground">強調色</Label>
         <div className="flex gap-3">
           {Object.entries(ACCENTS).map(([key, a]) => (
             <button
@@ -53,8 +53,8 @@ export function StyleControls({ poster, onChange }: Props) {
               aria-label={`強調色：${a.label}`}
               onClick={() => onChange({ accent: key })}
               className={cn(
-                "size-9 rounded-full border-2 transition-transform",
-                poster.accent === key ? "scale-110 border-foreground" : "border-transparent"
+                "size-9 rounded-full ring-offset-2 ring-offset-sidebar transition-all",
+                poster.accent === key ? "scale-110 ring-2 ring-ring" : "hover:scale-105"
               )}
               style={{ background: a.color }}
             />
@@ -65,7 +65,7 @@ export function StyleControls({ poster, onChange }: Props) {
       {poster.mode === "no-route" && (
         <>
           <div className="flex flex-col gap-2">
-            <Label>背景漸層</Label>
+            <Label className="text-muted-foreground">背景漸層</Label>
             <div className="flex gap-3">
               {Object.entries(GRADIENT_PRESETS).map(([key, g]) => (
                 <button
@@ -85,7 +85,7 @@ export function StyleControls({ poster, onChange }: Props) {
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="bg-image">或上傳背景圖片</Label>
+            <Label htmlFor="bg-image" className="text-muted-foreground">或上傳背景圖片</Label>
             <Input
               id="bg-image"
               type="file"

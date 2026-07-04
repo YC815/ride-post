@@ -55,7 +55,7 @@ export function StatsForm({ poster, presetKey, params, onPosterChange, onPresetC
           <SelectTrigger id="pace" className="w-full">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent className="z-[200]">
+          <SelectContent>
             {Object.entries(PACE_PRESETS).map(([key, p]) => (
               <SelectItem key={key} value={key}>
                 {p.label}（{p.params.flatSpeed} km/h・爬升 {p.params.climbRate} m/h）
@@ -90,7 +90,7 @@ export function StatsForm({ poster, presetKey, params, onPosterChange, onPresetC
 function Field({ label, id, children }: { label: string; id: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-2">
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id} className="text-muted-foreground">{label}</Label>
       {children}
     </div>
   );
@@ -99,7 +99,7 @@ function Field({ label, id, children }: { label: string; id: string; children: R
 function NumField({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <Label className="text-xs">{label}</Label>
+      <Label className="text-xs text-muted-foreground">{label}</Label>
       <Input
         type="number"
         value={value}
